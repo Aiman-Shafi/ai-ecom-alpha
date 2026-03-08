@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.foreplay.co)",
+      "WebFetch(domain:public.api.foreplay.co)",
+      "WebFetch(domain:docs.foreplay.co)",
+      "Bash(npm install next@latest react@latest react-dom@latest)",
+      "Bash(npm install -D typescript @types/react @types/node tailwindcss @tailwindcss/postcss postcss eslint)"
+    ]
+  }
+}
