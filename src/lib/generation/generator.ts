@@ -1,4 +1,4 @@
-import type { AdAnalysis, BrandProfile } from "@/types";
+import type { AdAnalysis, BrandProfile } from "@/shared/types";
 
 interface GenerationResult {
   imageBase64: string;

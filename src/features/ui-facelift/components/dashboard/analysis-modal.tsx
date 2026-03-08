@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { AdAnalysis } from "@/types";
-import type { ForeplayAd } from "@/types/foreplay";
-import { useAppStore } from "@/lib/store";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Badge } from "@/shared/components/ui/badge";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import type { AdAnalysis } from "@/shared/types";
+import type { ForeplayAd } from "@/shared/types/foreplay";
+import { useAppStore } from "@/shared/lib/store";
 import { X, Sparkles, Copy } from "lucide-react";
 import Image from "next/image";
 

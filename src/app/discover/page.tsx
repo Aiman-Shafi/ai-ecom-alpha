@@ -2,15 +2,15 @@
 
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AdCard } from "@/components/dashboard/ad-card";
-import { AnalysisModal } from "@/components/dashboard/analysis-modal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import { useAppStore } from "@/lib/store";
-import type { ForeplayAd } from "@/types/foreplay";
-import type { AdAnalysis } from "@/types";
+import { AdCard } from "@/features/ui-facelift/components/dashboard/ad-card";
+import { AnalysisModal } from "@/features/ui-facelift/components/dashboard/analysis-modal";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Select } from "@/shared/components/ui/select";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { useAppStore } from "@/shared/lib/store";
+import type { ForeplayAd } from "@/shared/types/foreplay";
+import type { AdAnalysis } from "@/shared/types";
 import { useRouter } from "next/navigation";
 import { Search, Globe } from "lucide-react";
 

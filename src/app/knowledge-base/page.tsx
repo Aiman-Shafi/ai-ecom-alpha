@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
-import { useAppStore } from "@/lib/store";
-import type { Competitor, UploadedAsset } from "@/types";
-import type { ForeplayBrand } from "@/types/foreplay";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { useAppStore } from "@/shared/lib/store";
+import type { Competitor, UploadedAsset } from "@/shared/types";
+import type { ForeplayBrand } from "@/shared/types/foreplay";
 import {
   BookOpen,
   Plus,

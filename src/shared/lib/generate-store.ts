@@ -1,8 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import type { ForeplayAd } from "@/types/foreplay";
-import type { AdAnalysis } from "@/types";
+import type { ForeplayAd } from "@/shared/types/foreplay";
+import type { AdAnalysis } from "@/shared/types";
 import type { GenerationOverrides } from "@/lib/generation/generator";
 
 export type GenerateStep = "select" | "analyze" | "configure" | "generate" | "review";

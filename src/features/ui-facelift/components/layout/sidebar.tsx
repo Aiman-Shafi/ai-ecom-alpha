@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import {
   LayoutDashboard,
   Search,
@@ -13,7 +13,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { useAppStore } from "@/lib/store";
+import { useAppStore } from "@/shared/lib/store";
 
 const navItems = [
   { href: "/", label: "Ad Feed", icon: LayoutDashboard },

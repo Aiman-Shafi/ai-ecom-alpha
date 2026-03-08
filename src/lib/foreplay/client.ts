@@ -6,7 +6,7 @@ import type {
   DiscoverBrandsParams,
   DiscoverAdsParams,
   BrandAdsParams,
-} from "@/types/foreplay";
+} from "@/shared/types/foreplay";
 
 const BASE_URL = "https://public.api.foreplay.co";
 

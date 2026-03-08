@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateAd, type GenerationOverrides } from "@/lib/generation/generator";
-import type { AdAnalysis, BrandProfile } from "@/types";
+import type { AdAnalysis, BrandProfile } from "@/shared/types";
 
 export const maxDuration = 120;
 

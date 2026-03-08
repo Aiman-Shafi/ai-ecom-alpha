@@ -1,5 +1,5 @@
-import type { AdAnalysis, BrandProfile } from "@/types";
-import type { ForeplayAd } from "@/types/foreplay";
+import type { AdAnalysis, BrandProfile } from "@/shared/types";
+import type { ForeplayAd } from "@/shared/types/foreplay";
 
 const ANALYSIS_PROMPT = `You are an expert direct-response advertising analyst specializing in e-commerce static ads. Analyze this ad to identify specific elements that make it high-converting.
 

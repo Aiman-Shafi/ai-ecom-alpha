@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import { useAppStore } from "@/lib/store";
-import { useGenerateStore, type GeneratedVariation } from "@/lib/generate-store";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { Badge } from "@/shared/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { Select } from "@/shared/components/ui/select";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { useAppStore } from "@/shared/lib/store";
+import { useGenerateStore, type GeneratedVariation } from "@/shared/lib/generate-store";
 import { buildGenerationPrompt, type GenerationOverrides } from "@/lib/generation/generator";
 import {
   Zap,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeAd } from "@/lib/analysis/analyzer";
-import type { BrandProfile } from "@/types";
-import type { ForeplayAd } from "@/types/foreplay";
+import type { BrandProfile } from "@/shared/types";
+import type { ForeplayAd } from "@/shared/types/foreplay";
 
 export async function POST(request: NextRequest) {
   try {

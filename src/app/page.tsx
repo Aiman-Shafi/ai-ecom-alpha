@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AdCard } from "@/components/dashboard/ad-card";
-import { Filters, type FilterValues } from "@/components/dashboard/filters";
-import { AnalysisModal } from "@/components/dashboard/analysis-modal";
-import { Spinner } from "@/components/ui/spinner";
-import { Button } from "@/components/ui/button";
-import { useAppStore } from "@/lib/store";
-import type { ForeplayAd } from "@/types/foreplay";
-import type { AdAnalysis } from "@/types";
+import { AdCard } from "@/features/ui-facelift/components/dashboard/ad-card";
+import { Filters, type FilterValues } from "@/features/ui-facelift/components/dashboard/filters";
+import { AnalysisModal } from "@/features/ui-facelift/components/dashboard/analysis-modal";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { Button } from "@/shared/components/ui/button";
+import { useAppStore } from "@/shared/lib/store";
+import type { ForeplayAd } from "@/shared/types/foreplay";
+import type { AdAnalysis } from "@/shared/types";
 import { useRouter } from "next/navigation";
 import { LayoutDashboard } from "lucide-react";
 

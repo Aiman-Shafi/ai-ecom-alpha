@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { getWinnerTier, getWinnerTierColor, getWinnerTierLabel } from "@/types";
-import type { ForeplayAd } from "@/types/foreplay";
-import { formatDate } from "@/lib/utils";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Card } from "@/shared/components/ui/card";
+import { getWinnerTier, getWinnerTierColor, getWinnerTierLabel } from "@/shared/types";
+import type { ForeplayAd } from "@/shared/types/foreplay";
+import { formatDate } from "@/shared/lib/utils";
 import { Sparkles, Search, ExternalLink, Clock } from "lucide-react";
 
 interface AdCardProps {

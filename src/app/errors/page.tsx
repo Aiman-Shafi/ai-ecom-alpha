@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useAppStore } from "@/lib/store";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { useAppStore } from "@/shared/lib/store";
 import { AlertTriangle, Trash2, Brain, Sparkles, Globe, HelpCircle } from "lucide-react";
 
 const sourceIcons = {

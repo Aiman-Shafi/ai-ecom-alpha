@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
-import { Sidebar } from "@/components/layout/sidebar";
+import { Sidebar } from "@/features/ui-facelift/components/layout/sidebar";
 import "./globals.css";
 
 export const metadata: Metadata = {

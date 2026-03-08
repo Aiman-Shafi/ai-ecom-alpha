@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useAppStore } from "@/lib/store";
-import { useGenerateStore } from "@/lib/generate-store";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { useAppStore } from "@/shared/lib/store";
+import { useGenerateStore } from "@/shared/lib/generate-store";
 import {
   BarChart3,
   Eye,
