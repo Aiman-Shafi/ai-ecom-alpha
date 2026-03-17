@@ -2,13 +2,14 @@
 
 import { cn } from "@/shared/lib/utils";
 import Image from "next/image";
-import { getWinnerTier, getWinnerTierLabel } from "@/shared/types";
+import { useState } from "react";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Card } from "@/shared/components/ui/card";
+import { getWinnerTier, getWinnerTierColor, getWinnerTierLabel } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
-import {
-  Sparkles, Search, ExternalLink, Play,
-  Image as ImageIcon, Layers, Trophy, TrendingUp, Zap,
-} from "lucide-react";
-import { daysToStatus, getStatusVars, timeAgo } from "@/features/ui-facelift/lib/theme";
+import { formatDate } from "@/shared/lib/utils";
+import { Sparkles, Search, ExternalLink, Clock, Play } from "lucide-react";
 
 interface AdCardProps {
   ad: ForeplayAd;
@@ -20,129 +21,30 @@ interface AdCardProps {
   selected?: boolean;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function extractDomain(url: string | null): string {
-  if (!url) return "";
-  try { return new URL(url).hostname.replace(/^www\./, ""); }
-  catch { return ""; }
-}
-
-function resolveImage(ad: ForeplayAd): string | null {
-  return ad.image ?? ad.thumbnail ?? null;
-}
-
-type AdFormat = "image" | "video" | "carousel";
-function resolveFormat(ad: ForeplayAd): AdFormat {
-  if (ad.display_format === "video" || !!ad.video) return "video";
-  if (ad.display_format === "carousel" || (ad.cards?.length ?? 0) > 1) return "carousel";
-  return "image";
-}
-
-function platformLabel(p: string): string {
-  const map: Record<string, string> = {
-    facebook: "Facebook", instagram: "Instagram", messenger: "Messenger",
-    audience_network: "Audience Network", tiktok: "TikTok",
-    linkedin: "LinkedIn", youtube: "YouTube", google: "Google",
-  };
-  return map[p.toLowerCase()] ?? p.charAt(0).toUpperCase() + p.slice(1);
-}
-
-const PLATFORM_COLORS: Record<string, string> = {
-  facebook: "#1877F2", instagram: "#E1306C", tiktok: "#010101",
-  linkedin: "#0A66C2", youtube: "#FF0000", google: "#4285F4",
-  messenger: "#0084FF",
-};
-
-/**
- * Tier badge config — solid colours so the badge is always readable
- * over any image regardless of brightness.
- *
- * proven    (30+ d) → deep green
- * strong    (14 d)  → deep amber
- * potential (7 d)   → deep indigo
- */
-const TIER_BADGE: Record<
-  "proven" | "strong" | "potential",
-  { bg: string; text: string; Icon: typeof Trophy }
-> = {
-  proven:   { bg: "#064E3B", text: "#6EE7B7", Icon: Trophy },
-  strong:   { bg: "#78350F", text: "#FCD34D", Icon: TrendingUp },
-  potential:{ bg: "#1E1B4B", text: "#A5B4FC", Icon: Zap },
-};
-
-// ── Component ──────────────────────────────────────────────────────────────────
-
-export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, onOpen, selected }: AdCardProps) {
-  const days         = ad.running_duration?.days ?? 0;
-  const tier         = getWinnerTier(days);
-  const status       = daysToStatus(days);
-  const statusVars   = getStatusVars(status);
-  const imageUrl     = resolveImage(ad);
-  const domain       = extractDomain(ad.link_url);
-  const format       = resolveFormat(ad);
-  const platforms    = ad.publisher_platform ?? [];
-  const mainPlatform = platforms[0]?.toLowerCase() ?? "";
-  const platColor    = PLATFORM_COLORS[mainPlatform] ?? "#78776F";
-  const copyLine     = ad.description?.split("\n").find((l) => l.trim())?.slice(0, 90) ?? "";
-
-  const tierConfig = tier ? TIER_BADGE[tier] : null;
+export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate }: AdCardProps) {
+  const days = ad.running_duration?.days ?? 0;
+  const tier = getWinnerTier(days);
+  const imageUrl = ad.image || ad.thumbnail;
+  const hasVideo = !!ad.video;
+  const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <article
-      onClick={() => onOpen?.(ad)}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-[12px] cursor-pointer",
-        "transition-all duration-150",
-        selected
-          ? "bg-accent-muted border-2 border-accent shadow-[0_0_0_3px_rgba(108,92,231,0.15)]"
-          : "bg-card-bg border border-card-border hover:border-border-default hover:shadow-[0_2px_14px_rgba(0,0,0,0.08)] hover:-translate-y-px"
-      )}
-    >
-      {/* ── Header: avatar · brand · days ────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 pt-3">
-        {ad.avatar ? (
-          <Image src={ad.avatar} alt="" width={18} height={18}
-            className="rounded-full shrink-0 object-cover" unoptimized />
-        ) : (
-          <div className="w-[18px] h-[18px] rounded-full bg-content-bg border border-border-subtle shrink-0 flex items-center justify-center">
-            <span className="text-[7px] font-bold text-text-tertiary">
-              {ad.name?.charAt(0)?.toUpperCase() ?? "?"}
-            </span>
-          </div>
-        )}
-
-        <span className="flex-1 text-[12px] font-semibold text-text-primary truncate leading-none">
-          {ad.name || "Unknown brand"}
-        </span>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: platColor }} />
-          <span className="text-[11px] font-mono font-semibold leading-none" style={{ color: statusVars.text }}>
-            {days}D
-          </span>
-        </div>
-
-        {ad.link_url && (
-          <a href={ad.link_url} target="_blank" rel="noopener noreferrer"
+    <Card className="overflow-hidden group hover:border-primary/30 transition-colors">
+      {/* Image / Video */}
+      <div className="relative aspect-[4/5] bg-muted overflow-hidden">
+        {isPlaying && ad.video ? (
+          <video
+            src={ad.video}
+            controls
+            autoPlay
+            className="w-full h-full object-cover"
             onClick={(e) => e.stopPropagation()}
-            className="shrink-0 p-0.5 text-text-tertiary hover:text-text-secondary transition-colors">
-            <ExternalLink size={11} />
-          </a>
-        )}
-      </div>
-
-      {/* ── Copy preview ──────────────────────────────────────────────────────── */}
-      {copyLine && (
-        <p className="px-3 pt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2 min-h-[2.5rem]">
-          {copyLine}
-        </p>
-      )}
-
-      {/* ── Creative ──────────────────────────────────────────────────────────── */}
-      <div className="relative mx-3 mt-2 rounded-[8px] bg-content-bg overflow-hidden aspect-[4/5]">
-        {imageUrl ? (
-          <Image src={imageUrl} alt={ad.name || "Ad creative"} fill
+          />
+        ) : imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={ad.name || "Ad"}
+            fill
             className="object-cover"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 220px"
             unoptimized />
@@ -162,13 +64,32 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, onOpen, sele
           </div>
         )}
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          <ActionButton onClick={(e) => { e.stopPropagation(); onAnalyze(ad); }}
-            icon={<Search size={12} />} label="Analyze" />
-          <ActionButton onClick={(e) => { e.stopPropagation(); onDuplicate(ad); }}
-            icon={<Sparkles size={12} />} label="Duplicate" secondary />
-        </div>
+        {/* Overlay buttons — hidden while video is playing */}
+        {!isPlaying && (
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            {hasVideo && (
+              <Button size="sm" variant="outline" onClick={() => setIsPlaying(true)} className="bg-black/50">
+                <Play className="h-3.5 w-3.5 mr-1.5" />
+                Play
+              </Button>
+            )}
+            <Button size="sm" onClick={() => onAnalyze(ad)}>
+              <Search className="h-3.5 w-3.5 mr-1.5" />
+              Analyze
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onDuplicate(ad)} className="bg-black/50">
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              Duplicate
+            </Button>
+          </div>
+        )}
+
+        {/* Persistent play badge when video exists and not playing */}
+        {hasVideo && !isPlaying && (
+          <div className="absolute bottom-2 right-2 bg-black/70 rounded-full p-1.5 pointer-events-none">
+            <Play className="h-3 w-3 text-white fill-white" />
+          </div>
+        )}
 
         {/* ── Winner tier badge — solid, always readable ── */}
         {tierConfig && (

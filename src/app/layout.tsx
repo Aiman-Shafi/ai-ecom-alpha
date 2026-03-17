@@ -29,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased">
+    <html lang="en" className="dark">
+      <body suppressHydrationWarning>
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
