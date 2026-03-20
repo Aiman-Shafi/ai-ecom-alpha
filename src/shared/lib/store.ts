@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BrandProfile, Competitor, UsageStats, AdAnalysis, GeneratedAd, UploadedAsset, ErrorLogEntry } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
+import type { TeardownHistoryEntry, TeardownReport, TeardownProgress } from "@/features/teardown/types";
 import { defaultBrandProfile, normalizeBrandProfile } from "./brand-profile";
 
 interface ApiKeys {
@@ -77,6 +78,16 @@ interface AppState {
   // Preferences
   preferences: Preferences;
   setPreferences: (prefs: Partial<Preferences>) => void;
+
+  // Teardown History
+  teardownHistory: TeardownHistoryEntry[];
+  addTeardownHistory: (entry: TeardownHistoryEntry) => void;
+  updateTeardownHistory: (id: string, updates: Partial<TeardownHistoryEntry>) => void;
+  removeTeardownHistory: (id: string) => void;
+
+  // Teardown Report Cache (persists completed reports across server restarts)
+  teardownReportCache: Record<string, { report: TeardownReport; progress: TeardownProgress }>;
+  cacheTeardownReport: (id: string, report: TeardownReport, progress: TeardownProgress) => void;
 
   // Data Management
   clearAnalyses: () => void;
@@ -182,6 +193,34 @@ export const useAppStore = create<AppState>()(
           },
         })),
 
+      teardownHistory: [],
+      addTeardownHistory: (entry) =>
+        set((state) => ({
+          teardownHistory: [entry, ...state.teardownHistory].slice(0, 50),
+        })),
+      updateTeardownHistory: (id, updates) =>
+        set((state) => ({
+          teardownHistory: state.teardownHistory.map((t) =>
+            t.id === id ? { ...t, ...updates } : t
+          ),
+        })),
+      removeTeardownHistory: (id) =>
+        set((state) => ({
+          teardownHistory: state.teardownHistory.filter((t) => t.id !== id),
+        })),
+
+      teardownReportCache: {},
+      cacheTeardownReport: (id, report, progress) =>
+        set((state) => {
+          const cache = { ...state.teardownReportCache, [id]: { report, progress } };
+          // Keep cache in sync with history — only retain entries that exist in history
+          const historyIds = new Set(state.teardownHistory.map((h) => h.id));
+          for (const key of Object.keys(cache)) {
+            if (!historyIds.has(key)) delete cache[key];
+          }
+          return { teardownReportCache: cache };
+        }),
+
       errorLogs: [],
       addErrorLog: (entry) =>
         set((state) => ({
@@ -220,10 +259,38 @@ export const useAppStore = create<AppState>()(
           apiKeys: { openaiKey: "", claudeKey: "", openrouterKey: "", analysisProvider: "openai", foreplayKey: "", googleAiKey: "", apifyToken: "" },
           preferences: { defaultSort: "newest", gridDensity: "comfortable", theme: "contrast" },
           errorLogs: [],
+          teardownHistory: [],
         }),
     }),
     {
       name: "ai-ecom-engine-store",
+      storage: {
+        getItem: (name: string) => {
+          const value = localStorage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: (name: string, value: unknown) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (e) {
+            // Quota exceeded — prune heavy keys and retry
+            if (e instanceof DOMException && e.name === "QuotaExceededError") {
+              try {
+                const parsed = (typeof value === "string" ? JSON.parse(value) : value) as Record<string, Record<string, unknown>>;
+                if (parsed?.state) {
+                  parsed.state.errorLogs = (parsed.state.errorLogs as unknown[] ?? []).slice(0, 20);
+                  parsed.state.generatedAds = (parsed.state.generatedAds as unknown[] ?? []).slice(0, 20);
+                }
+                localStorage.setItem(name, JSON.stringify(parsed));
+              } catch {
+                // Last resort — skip this write
+                console.warn("localStorage quota exceeded, skipping persist");
+              }
+            }
+          }
+        },
+        removeItem: (name: string) => localStorage.removeItem(name),
+      },
       merge: (persistedState, currentState) => {
         const typedPersistedState = persistedState as Partial<AppState> | undefined;
 
@@ -238,11 +305,13 @@ export const useAppStore = create<AppState>()(
         competitors: state.competitors,
         analyses: state.analyses,
         savedAds: state.savedAds,
-        generatedAds: state.generatedAds,
+        generatedAds: state.generatedAds.slice(0, 50),
         usage: state.usage,
-        errorLogs: state.errorLogs,
+        errorLogs: state.errorLogs.slice(0, 50),
         apiKeys: state.apiKeys,
         preferences: state.preferences,
+        teardownHistory: state.teardownHistory,
+        // teardownReportCache excluded — reports persist to disk via .tmp/teardowns/
       }),
     }
   )

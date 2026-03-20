@@ -2,6 +2,9 @@
 node_modules/
 docs/
 
+# teardown data cache
+.tmp/
+
 # next.js
 .next/
 .md/

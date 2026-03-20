@@ -1,5 +1,5 @@
 import { ApifyClient } from "apify-client";
-import type { OpenClawAgentTask, CrawlOptions } from "../types";
+import type { ApifyAgentTask, CrawlOptions } from "../types";
 
 function getApifyClient(tokenOverride?: string) {
   if (!tokenOverride) {
@@ -8,17 +8,16 @@ function getApifyClient(tokenOverride?: string) {
   return new ApifyClient({ token: tokenOverride });
 }
 
-export async function getCrawlStatus(taskId: string, tokenOverride?: string): Promise<OpenClawAgentTask> {
+export async function getCrawlStatus(taskId: string, tokenOverride?: string): Promise<ApifyAgentTask> {
   try {
     const client = getApifyClient(tokenOverride);
     const run = await client.run(taskId).get();
-    
+
     if (!run) {
       return { task_id: taskId, status: "failed", error: "Apify run not found" };
     }
 
-    // Map Apify statuses to our UI statuses
-    const statusMap: Record<string, OpenClawAgentTask["status"]> = {
+    const statusMap: Record<string, ApifyAgentTask["status"]> = {
       "READY": "queued",
       "RUNNING": "in_progress",
       "SUCCEEDED": "completed",
@@ -28,7 +27,7 @@ export async function getCrawlStatus(taskId: string, tokenOverride?: string): Pr
       "ABORTED": "failed",
     };
 
-    const agentTask: OpenClawAgentTask = {
+    const agentTask: ApifyAgentTask = {
       task_id: taskId,
       status: statusMap[run.status] || "failed",
     };
@@ -50,18 +49,14 @@ export async function getCrawlStatus(taskId: string, tokenOverride?: string): Pr
   }
 }
 
-// --- Meta Ad Library Crawl (Apify) ---
-
 export async function crawlMetaAdLibrary(
   query: string,
   options: CrawlOptions = {},
   tokenOverride?: string
-): Promise<OpenClawAgentTask> {
+): Promise<ApifyAgentTask> {
   const client = getApifyClient(tokenOverride);
   const maxResults = options.maxResults ?? 20;
 
-  // We provide redundant input keys to cover common Apify Facebook Scraper schema variations.
-  // The 'dz_omar/facebook-ads-scraper-pro' actor will use the ones it recognizes.
   const run = await client.actor("dz_omar/facebook-ads-scraper-pro").start({
     searchQueries: [query],
     maxAds: maxResults,
@@ -74,13 +69,11 @@ export async function crawlMetaAdLibrary(
   return { task_id: run.id, status: "queued" };
 }
 
-// --- TikTok Top Ads Crawl (Apify) ---
-
 export async function crawlTikTokTopAds(
   query: string,
   options: CrawlOptions = {},
   tokenOverride?: string
-): Promise<OpenClawAgentTask> {
+): Promise<ApifyAgentTask> {
   const client = getApifyClient(tokenOverride);
   const maxResults = options.maxResults ?? 20;
 
@@ -100,11 +93,21 @@ export async function crawlTikTokTopAds(
   return { task_id: run.id, status: "queued" };
 }
 
-// --- Landing Page Scrape ---
-
 export async function scrapeLandingPage(
-  url: string
-): Promise<OpenClawAgentTask> {
-  // Placeholder for landing page scraping (e.g., using JSDOM/Cheerio or Apify's Web Scraper)
-  throw new Error("Landing page scraping via Apify is not yet implemented.");
+  url: string,
+  tokenOverride?: string
+): Promise<ApifyAgentTask> {
+  const client = getApifyClient(tokenOverride);
+
+  const run = await client.actor("apify/website-content-crawler").start({
+    startUrls: [{ url }],
+    maxCrawlDepth: 0,
+    maxCrawlPages: 1,
+    crawlerType: "cheerio",
+    proxyConfiguration: {
+      useApifyProxy: true,
+    },
+  });
+
+  return { task_id: run.id, status: "queued" };
 }

@@ -1,8 +1,8 @@
-import type { ScrapedAd, LandingPageIntel } from "../types";
+import type { ScrapedAd } from "../types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 
 /**
- * Parse raw JSON result string from OpenClaw agent into ScrapedAd objects.
+ * Parse raw JSON result string from Apify into ScrapedAd objects.
  */
 export function parseScrapedAds(
   rawResult: string,
@@ -10,7 +10,6 @@ export function parseScrapedAds(
   source: "meta" | "tiktok"
 ): ScrapedAd[] {
   try {
-    // Strip markdown code fences if present
     const cleaned = rawResult
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
@@ -22,30 +21,27 @@ export function parseScrapedAds(
     return parsed.map(
       (item: Record<string, unknown>, index: number): ScrapedAd => {
         const i = item as any;
-        
-        // TikTok Specific parsing
+
         const isTikTok = source === "tiktok";
         let advertiserName = String(i.author_name || i.page_name || i.advertiserName || i.advertiser_name || i.sponsor_name || i.brand_name || i.pageName || i.authorMeta?.name || "Unknown");
         if (isTikTok && advertiserName === "Unknown" && i.days7?.hashtag_name) {
             advertiserName = `#${i.days7.hashtag_name}`;
         }
-        
+
         let customAdText = String(i.adTitle || i.title || i.ad_desc || i.caption || i.snapshot?.body || i.adText || i.ad_text || i.primaryText || i.text || "").trim();
         if (isTikTok && customAdText === "") customAdText = String(i.days7?.description || i.days30?.description || "");
-        
+
         if (customAdText.includes("{{product.name}}") || customAdText.includes("{{product.brand}}") || customAdText === "") {
             customAdText = String(i.adTitle || i.text || i.ad_text || i.caption || i.ad_desc || i.snapshot?.body || i.adText || i.primaryText || i.title || "").trim();
         }
-        
-        // Final aggressive cleanup of any leftover Apify placeholders
+
         customAdText = customAdText
           .replace(/\{\{product\.name\}\}/g, "")
           .replace(/\{\{product\.brand\}\}/g, "")
           .trim();
-          
+
         const adText = customAdText;
-        
-        // Extracts from deep snapshot cards array for Meta, or videoDetail/cover_uri for TikTok
+
         const firstCard = i.snapshot?.cards?.[0] || {};
         let imageUrl = i.adVideoCover || i.coverUrl || i.thumbnailUrl || i.cover || i.posterUrl ||
           i.media?.primary_thumbnail || i.cover_image || i.thumbnail_url || i.videoDetail?.cover_uri ||
@@ -66,13 +62,10 @@ export function parseScrapedAds(
         }
         if (!videoUrl && i.media?.videos?.[0]) videoUrl = i.media.videos[0];
 
-        // zadexinho actor provides detailUrl directly; also support adId-based construction
         const landingPageUrl = i.detailUrl || i.landing_page_url || i.action_url || i.target_url ||
           firstCard.link_url || i.snapshot?.link_url || i.link_url || i.landingPageUrl || i.ad_url ||
           (isTikTok && i.adId ? `https://library.tiktok.com/ads/detail/?adId=${i.adId}` : undefined);
 
-        // Convert Meta's start_date UNIX timestamp (e.g. 1728370800) to ISO string, or use TikTok's createTime
-        // zadexinho actor uses firstShownDate / lastShownDate (ISO date strings)
         let startDate: string | undefined = undefined;
         try {
           if (i.firstShownDate) {
@@ -118,58 +111,13 @@ export function parseScrapedAds(
       }
     );
   } catch {
-    console.error("Failed to parse OpenClaw scrape results:", rawResult);
+    console.error("Failed to parse scrape results:", rawResult);
     return [];
   }
 }
 
 /**
- * Parse raw JSON result string from OpenClaw into LandingPageIntel.
- */
-export function parseLandingPageIntel(
-  rawResult: string,
-  url: string
-): LandingPageIntel {
-  try {
-    const cleaned = rawResult
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
-    const parsed = JSON.parse(cleaned);
-
-    return {
-      url,
-      headline: String(parsed.headline || ""),
-      subheadline: parsed.subheadline
-        ? String(parsed.subheadline)
-        : undefined,
-      cta: String(parsed.cta || ""),
-      offers: Array.isArray(parsed.offers)
-        ? parsed.offers.map(String)
-        : [],
-      socialProof: Array.isArray(parsed.socialProof)
-        ? parsed.socialProof.map(String)
-        : [],
-      pricePoints: Array.isArray(parsed.pricePoints)
-        ? parsed.pricePoints.map(String)
-        : [],
-    };
-  } catch {
-    return {
-      url,
-      headline: "",
-      cta: "",
-      offers: [],
-      socialProof: [],
-      pricePoints: [],
-      rawContent: rawResult,
-    };
-  }
-}
-
-/**
- * Convert a ScrapedAd to a ForeplayAd-compatible shape so it plugs into
- * the existing Analyze → Generate pipeline.
+ * Convert a ScrapedAd to a ForeplayAd-compatible shape.
  */
 export function scrapedAdToForeplayAd(ad: ScrapedAd): ForeplayAd {
   const startTimestamp = ad.startDate
@@ -186,14 +134,12 @@ export function scrapedAdToForeplayAd(ad: ScrapedAd): ForeplayAd {
       )
     : 1;
 
-  // The lexis-solutions actor unfortunately overwrites true historical start dates with the current scrape day timestamp.
-  // To retain visual feature parity with Meta ("Proven Winners" ranking), we deduce a deterministic running duration using the ad ID.
   if (ad.source === "tiktok" && runningDays <= 2) {
     let hash = 0;
     for (let i = 0; i < ad.id.length; i++) {
       hash = ad.id.charCodeAt(i) + ((hash << 5) - hash);
     }
-    runningDays = Math.abs(hash) % 120 + 7; // Gives the ad a consistent duration between 7 and 126 days
+    runningDays = Math.abs(hash) % 120 + 7;
   }
 
   return {

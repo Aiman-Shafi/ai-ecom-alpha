@@ -123,7 +123,7 @@ function ApiKeysTab() {
       <Card>
         <SectionTitle>Server-Side Keys</SectionTitle>
         <p className="text-[12px] text-text-tertiary mb-4">
-          Required to use Discover, Generate, and Openclaw features. Stored locally in your browser.
+          Required to use Discover and Generate features. Stored locally in your browser.
         </p>
         <div className="space-y-4">
           <KeyInput label="Foreplay API Key" placeholder="Enter your Foreplay API key…" value={apiKeys.foreplayKey} show={showForeplay} toggle={() => setShowForeplay(v => !v)} onChange={v => setApiKeys({ foreplayKey: v })} />

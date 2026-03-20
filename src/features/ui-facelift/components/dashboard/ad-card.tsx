@@ -7,7 +7,7 @@ import { getWinnerTier, getWinnerTierLabel } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 import { useAppStore } from "@/shared/lib/store";
 import { getAdMediaType } from "@/shared/lib/media";
-import { Play, ImageIcon, Layers, Trophy, TrendingUp, Zap, Bookmark, ChevronDown, UserPlus, Clock, X, Sparkles, Copy, Check, Film } from "lucide-react";
+import { Play, ImageIcon, Layers, Trophy, TrendingUp, Zap, Bookmark, UserPlus, Clock, X, Sparkles, Copy, Check, Film } from "lucide-react";
 import { createPortal } from "react-dom";
 
 interface AdCardProps {
@@ -40,8 +40,6 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isSaved = useAppStore((s) => ad.id in s.savedAds);
   const saveAd = useAppStore((s) => s.saveAd);
@@ -49,18 +47,6 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
   const addCompetitor = useAppStore((s) => s.addCompetitor);
   const removeCompetitor = useAppStore((s) => s.removeCompetitor);
   const isCompetitor = useAppStore((s) => s.competitors.some((c) => c.foreplayBrandId === ad.brand_id));
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [dropdownOpen]);
 
   const format = ad.display_format ?? "image";
   const domain = ad.link_url
@@ -290,6 +276,33 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
             </button>
           )}
           <button
+            onClick={() => {
+              if (isCompetitor) {
+                removeCompetitor(`comp-${ad.brand_id}`);
+              } else {
+                addCompetitor({
+                  id: `comp-${ad.brand_id}`,
+                  name: ad.name || "Unknown Brand",
+                  url: ad.link_url || "",
+                  foreplayBrandId: ad.brand_id,
+                  facebookPageId: null,
+                  avatar: ad.avatar,
+                  notes: "",
+                  trackingSince: new Date().toISOString(),
+                  adCount: 0,
+                });
+              }
+            }}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-[8px] border text-[12px] font-medium transition-all duration-200 cursor-pointer ${
+              isCompetitor
+                ? "border-accent bg-accent text-white hover:bg-accent-hover"
+                : "border-border-subtle bg-content-bg text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
+            }`}
+          >
+            <UserPlus size={14} />
+            {isCompetitor ? "Remove Competitor" : "Add Competitor"}
+          </button>
+          <button
             onClick={() => onDuplicate(ad)}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-[8px] border border-border-subtle bg-content-bg text-text-secondary text-[12px] font-medium transition-all duration-200 cursor-pointer hover:bg-accent hover:border-accent hover:text-white"
           >
@@ -298,74 +311,58 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
           </button>
         </div>
       ) : (
-        <div className="px-3 pt-1 pb-3" ref={dropdownRef}>
-          <div className="relative flex">
-            <button
-              onClick={() => {
-                if (isSaved) {
-                  unsaveAd(ad.id);
-                } else {
-                  saveAd(ad);
-                }
-              }}
-              className={`flex-1 flex items-center py-2.5 px-3 rounded-l-[8px] border border-r-0 transition-all duration-200 cursor-pointer ${
-                isSaved
-                  ? "bg-accent border-accent text-white"
-                  : "border-border-subtle bg-content-bg text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
-              }`}
-            >
-              <Bookmark size={14} className={isSaved ? "fill-white" : ""} />
-              <span className="text-[12px] font-medium flex-1 text-center">
-                {isSaved ? "Saved" : "Save to Analyze"}
-              </span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setDropdownOpen((v) => !v);
-              }}
-              className={`flex items-center justify-center px-2.5 rounded-r-[8px] border transition-all duration-200 cursor-pointer ${
-                isSaved
-                  ? "bg-accent border-accent text-white hover:bg-accent-hover"
-                  : "border-border-subtle bg-content-bg text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
-              }`}
-            >
-              <ChevronDown size={13} className={`opacity-60 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {/* Dropdown menu */}
-            {dropdownOpen && (
-              <div className="absolute bottom-full mb-1 right-0 z-20 min-w-[180px] border border-border-subtle rounded-[8px] shadow-lg py-1 bg-content-bg">
-                <button
-                  onClick={() => {
-                    if (isCompetitor) {
-                      removeCompetitor(`comp-${ad.brand_id}`);
-                    } else {
-                      addCompetitor({
-                        id: `comp-${ad.brand_id}`,
-                        name: ad.name || "Unknown Brand",
-                        url: ad.link_url || "",
-                        foreplayBrandId: ad.brand_id,
-                        facebookPageId: null,
-                        avatar: ad.avatar,
-                        notes: "",
-                        trackingSince: new Date().toISOString(),
-                        adCount: 0,
-                      });
-                    }
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[12px] font-medium cursor-pointer transition-all duration-200 rounded-[6px] ${
-                    isCompetitor
-                      ? "bg-accent text-white hover:bg-accent-hover"
-                      : "text-text-primary hover:bg-accent hover:text-white"
-                  }`}
-                >
-                  <UserPlus size={14} />
-                  {isCompetitor ? "Remove Competitor" : "Add Competitor"}
-                </button>
-              </div>
-            )}
-          </div>
+        <div className="px-3 pt-1 pb-3 space-y-1.5">
+          <button
+            onClick={() => {
+              if (isSaved) {
+                unsaveAd(ad.id);
+              } else {
+                saveAd(ad);
+              }
+            }}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-[8px] border text-[12px] font-medium transition-all duration-200 cursor-pointer ${
+              isSaved
+                ? "bg-accent border-accent text-white hover:bg-accent-hover"
+                : "border-border-subtle bg-content-bg text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
+            }`}
+          >
+            <Bookmark size={14} className={isSaved ? "fill-white" : ""} />
+            {isSaved ? "Saved" : "Save to Analyze"}
+          </button>
+          <button
+            onClick={() => {
+              if (isCompetitor) {
+                removeCompetitor(`comp-${ad.brand_id}`);
+              } else {
+                addCompetitor({
+                  id: `comp-${ad.brand_id}`,
+                  name: ad.name || "Unknown Brand",
+                  url: ad.link_url || "",
+                  foreplayBrandId: ad.brand_id,
+                  facebookPageId: null,
+                  avatar: ad.avatar,
+                  notes: "",
+                  trackingSince: new Date().toISOString(),
+                  adCount: 0,
+                });
+              }
+            }}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-[8px] border text-[12px] font-medium transition-all duration-200 cursor-pointer ${
+              isCompetitor
+                ? "border-accent bg-accent text-white hover:bg-accent-hover"
+                : "border-border-subtle bg-content-bg text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
+            }`}
+          >
+            <UserPlus size={14} />
+            {isCompetitor ? "Remove Competitor" : "Add Competitor"}
+          </button>
+          <button
+            onClick={() => onDuplicate(ad)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-[8px] border border-border-subtle bg-content-bg text-text-secondary text-[12px] font-medium transition-all duration-200 cursor-pointer hover:bg-accent hover:border-accent hover:text-white"
+          >
+            <Copy size={14} />
+            Duplicate this Ad
+          </button>
         </div>
       )}
 

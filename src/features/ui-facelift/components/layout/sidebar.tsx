@@ -11,7 +11,6 @@ import {
   Zap,
   FileText,
   Bot,
-  AlertTriangle,
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
@@ -28,8 +27,7 @@ const mainNavItems = [
 const intelligenceNavItems = [
   { href: "/knowledge-base", label: "Branding", icon: BookMarked },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/openclaw", label: "Openclaw", icon: Bot },
-  { href: "/errors", label: "Reports", icon: AlertTriangle, errorBadge: true },
+  { href: "/teardown", label: "Openclaw", icon: Bot },
 ];
 
 const platforms = [
@@ -47,7 +45,6 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const errorCount = useAppStore((s) => s.errorLogs.length);
   const brandName = useAppStore((s) => s.brandProfile.brandName);
   const theme = useAppStore((s) => s.preferences.theme);
   const plateColor = theme === "light" ? "#FFFFFF" : "#0F1117";
@@ -153,7 +150,6 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
         {intelligenceNavItems.map((item) => {
           const active = isActive(item.href);
-          const count = item.errorBadge && errorCount > 0 ? errorCount : null;
           return (
             <Link
               key={item.href}
@@ -176,14 +172,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 strokeWidth={1.8}
               />
               {!collapsed && (
-                <>
-                  <span className="relative z-[2] flex-1">{item.label}</span>
-                  {count !== null && (
-                    <span className="relative z-[2] bg-white/[0.06] px-[7px] py-0.5 rounded-[10px] font-mono font-medium text-[10px] text-sidebar-text-muted">
-                      {count}
-                    </span>
-                  )}
-                </>
+                <span className="relative z-[2] flex-1">{item.label}</span>
               )}
             </Link>
           );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Search, BookMarked, BarChart3,
-  Zap, Bot, AlertTriangle, Users, FlaskConical, TrendingUp, Settings,
+  Zap, Users, FlaskConical, TrendingUp, Settings,
 } from "lucide-react";
 import { useAppStore } from "@/shared/lib/store";
 import { cn } from "@/shared/lib/utils";
@@ -16,8 +16,6 @@ const PAGE_MAP: Record<string, { label: string; icon: React.ElementType; descrip
   "/knowledge-base":{ label: "Brand",          icon: BookMarked,      description: "Brand & competitor data" },
   "/analytics":     { label: "Analytics",     icon: BarChart3,       description: "Performance & trends" },
   "/generate":      { label: "Generate",      icon: Zap,             description: "AI-powered ad variants" },
-  "/openclaw":      { label: "Openclaw",      icon: Bot,             description: "AI intelligence" },
-  "/errors":        { label: "Reports",       icon: AlertTriangle,   description: "Error logs" },
   "/settings":      { label: "Settings",      icon: Settings,        description: "API keys, preferences & data management" },
 };
 
