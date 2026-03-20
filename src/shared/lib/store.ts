@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BrandProfile, Competitor, UsageStats, AdAnalysis, GeneratedAd, UploadedAsset, ErrorLogEntry } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
+import { defaultBrandProfile, normalizeBrandProfile } from "./brand-profile";
 
 interface ApiKeys {
   openaiKey: string;
@@ -20,46 +21,6 @@ interface Preferences {
   gridDensity: "compact" | "comfortable";
   theme: "contrast" | "dark" | "light";
 }
-
-const defaultBrandProfile: BrandProfile = {
-  brandName: "PawLux Co.",
-  brandUrl: "https://pawluxco.com",
-  brandDescription:
-    "We design premium, vet-informed dog products that prioritize durability, comfort, and modern aesthetics. From orthopedic beds to enrichment toys, every product is crafted with high-quality, non-toxic materials for dogs and the humans who share their space.",
-  brandVoice: "Warm, confident, knowledgeable, and playful.",
-  targetAudience:
-    "Millennial and Gen-Z dog owners aged 25–40 who treat their dogs as family, invest in quality over quantity, care about product safety and sustainability, and prefer products that look good in their home.",
-  usps: [
-    "Vet-consulted designs built for breed-specific comfort and safety",
-    "Premium, non-toxic materials (organic cotton, natural rubber, recycled fabrics)",
-    "Aesthetic-forward products that blend into modern home interiors",
-  ],
-  productCategories: [
-    "Orthopedic Dog Beds",
-    "Enrichment Toys",
-    "Elevated Feeders",
-    "Travel Carriers",
-  ],
-  priceRange: "$35 – $200 per product",
-  brandColors: { primary: "#1B2A2F", secondary: "#C8A96E", accent: "#E8DDD3" },
-  fonts: { heading: "DM Sans Bold", body: "DM Sans Regular" },
-  logoFiles: [],
-  exampleAds: [],
-  productImages: [],
-  niche: "Premium Dog Accessories & Wellness",
-  subNiches: [
-    "Dog Comfort & Sleep",
-    "Enrichment & Mental Stimulation",
-    "Sustainable Pet Products",
-  ],
-  excludedThemes: [
-    "Fear-based messaging about pet health",
-    "Guilt-tripping pet owners",
-    "Overly clinical/veterinary language",
-    "Cheap or discount-focused messaging",
-    "Humanizing dogs in an exaggerated or infantilizing way",
-  ],
-};
 
 interface DiscoverSearch {
   query: string;
@@ -145,7 +106,7 @@ export const useAppStore = create<AppState>()(
 
       setBrandProfile: (profile) =>
         set((state) => ({
-          brandProfile: { ...state.brandProfile, ...profile },
+          brandProfile: normalizeBrandProfile({ ...state.brandProfile, ...profile }),
         })),
 
       addCompetitor: (competitor) =>
@@ -206,7 +167,7 @@ export const useAppStore = create<AppState>()(
       addBrandAsset: (asset, profileField) =>
         set((state) => ({
           brandProfile: {
-            ...state.brandProfile,
+            ...normalizeBrandProfile(state.brandProfile),
             [profileField]: [...state.brandProfile[profileField], asset],
           },
         })),
@@ -214,7 +175,7 @@ export const useAppStore = create<AppState>()(
       removeBrandAsset: (assetId, profileField) =>
         set((state) => ({
           brandProfile: {
-            ...state.brandProfile,
+            ...normalizeBrandProfile(state.brandProfile),
             [profileField]: state.brandProfile[profileField].filter(
               (a) => a.id !== assetId
             ),
@@ -263,6 +224,15 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "ai-ecom-engine-store",
+      merge: (persistedState, currentState) => {
+        const typedPersistedState = persistedState as Partial<AppState> | undefined;
+
+        return {
+          ...currentState,
+          ...typedPersistedState,
+          brandProfile: normalizeBrandProfile(typedPersistedState?.brandProfile),
+        };
+      },
       partialize: (state) => ({
         brandProfile: state.brandProfile,
         competitors: state.competitors,

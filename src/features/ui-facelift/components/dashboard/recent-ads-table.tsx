@@ -65,7 +65,7 @@ export function RecentAdsTable({ variations = [], useDemoData = false }: RecentA
           score:    null,
           time:     "—",
           cost:     "—",
-          thumb:    v.imageDataUrl || null,
+          thumb:    v.assetUrl || null,
         }))
     : MOCK_TABLE;
 

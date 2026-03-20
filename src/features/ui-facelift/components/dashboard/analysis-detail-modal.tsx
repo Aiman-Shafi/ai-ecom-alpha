@@ -2,11 +2,11 @@
 
 import { X } from "lucide-react";
 import Image from "next/image";
-import type { AdAnalysis } from "@/shared/types";
+import type { ImageAdAnalysis } from "@/shared/types";
 
 interface AnalysisDetailModalProps {
   name: string;
-  analysis: AdAnalysis;
+  analysis: ImageAdAnalysis;
   onClose: () => void;
   imageUrl?: string;
   description?: string;

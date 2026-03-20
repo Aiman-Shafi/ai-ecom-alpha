@@ -1,4 +1,5 @@
 import type { AdAnalysis, BrandProfile } from "@/shared/types";
+import { isImageAnalysis } from "@/shared/lib/media";
 
 interface GenerationResult {
   imageBase64: string;
@@ -100,6 +101,10 @@ DO NOT include: ${brandProfile.excludedThemes.join(", ") || "none specified"}
 
 Create a professional, polished ad image at ${aspectRatio} aspect ratio. The text must be crisp and legible. The design should look like it was made by a professional graphic designer.`;
     }
+  }
+
+  if (!isImageAnalysis(analysis)) {
+    throw new Error("Video analysis cannot be used with image generation");
   }
 
   // --- Analyzed mode (with analysis) ---

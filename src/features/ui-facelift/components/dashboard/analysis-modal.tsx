@@ -5,7 +5,8 @@ import type { AdAnalysis } from "@/shared/types";
 import type { AnalysisProvider } from "@/lib/analysis/analyzer";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 import { useAppStore } from "@/shared/lib/store";
-import { X, Sparkles, Copy, Loader2, Settings } from "lucide-react";
+import { getAdMediaType, getPrimaryCreativeUrl, isImageAnalysis, isVideoAnalysis } from "@/shared/lib/media";
+import { X, Sparkles, Copy, Loader2, Settings, Film } from "lucide-react";
 import Image from "next/image";
 
 interface AnalysisModalProps {
@@ -31,25 +32,31 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
     setError(null);
   };
 
+  const isVideoAd = getAdMediaType(ad) === "video";
+
   const runAnalysis = async () => {
-    if (!activeKey) {
+    if (!isVideoAd && !activeKey) {
       setError(`missing_key`);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/analyze", {
+      const res = await fetch(isVideoAd ? "/api/video-remix/analyze" : "/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ad,
-          brandProfile,
-          provider,
-          openaiApiKey: provider === "openai" ? activeKey : undefined,
-          claudeApiKey: provider === "claude" ? activeKey : undefined,
-          openrouterApiKey: provider === "openrouter" ? activeKey : undefined,
-        }),
+        body: JSON.stringify(
+          isVideoAd
+            ? { ad, brandProfile }
+            : {
+                ad,
+                brandProfile,
+                provider,
+                openaiApiKey: provider === "openai" ? activeKey : undefined,
+                claudeApiKey: provider === "claude" ? activeKey : undefined,
+                openrouterApiKey: provider === "openrouter" ? activeKey : undefined,
+              }
+        ),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Analysis failed");
@@ -63,7 +70,8 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
     }
   };
 
-  const imageUrl = ad.image || ad.thumbnail;
+  const mediaType = getAdMediaType(ad);
+  const creativeUrl = getPrimaryCreativeUrl(ad);
 
   return (
     /* Backdrop */
@@ -100,11 +108,21 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
         >
           {/* Left: Ad preview */}
           <div className="flex flex-col gap-4">
-            {imageUrl && (
+            {creativeUrl && (
               <div
                 className="relative aspect-[4/5] rounded-lg overflow-hidden bg-content-bg"
               >
-                <Image src={imageUrl} alt="" fill className="object-cover" unoptimized />
+                {isVideoAd && ad.video ? (
+                  <video
+                    src={ad.video}
+                    poster={ad.thumbnail || undefined}
+                    controls
+                    playsInline
+                    className="h-full w-full object-cover bg-black"
+                  />
+                ) : (
+                  <Image src={creativeUrl} alt="" fill className="object-cover" unoptimized />
+                )}
               </div>
             )}
             {ad.description && (
@@ -127,35 +145,39 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
             {!analysis && !loading && (
               <div className="flex flex-col gap-4">
                 <p className="text-[13px] text-text-secondary leading-relaxed">
-                  Analyze this ad with AI Vision to understand why it converts.
+                  {isVideoAd
+                    ? "Analyze this video ad with Gemini to understand its hook, scenes, pacing, and CTA structure."
+                    : "Analyze this ad with AI Vision to understand why it converts."}
                 </p>
 
-                {/* Provider toggle */}
-                <div className="flex flex-col gap-1.5">
-                  <label style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>
-                    AI provider
-                  </label>
-                  <div className="flex gap-1 p-1 bg-content-bg border border-border-subtle rounded-md">
-                    {([
-                      ["openai", "OpenAI GPT-4o"],
-                      ["claude", "Claude Opus"],
-                      ["openrouter", "OpenRouter"],
-                    ] as [AnalysisProvider, string][]).map(([p, label]) => (
-                      <button
-                        key={p}
-                        onClick={() => handleProviderChange(p)}
-                        className={[
-                          "flex-1 h-7 rounded text-[12px] font-medium transition-all duration-120 cursor-pointer",
-                          provider === p
-                            ? "bg-accent text-white"
-                            : "text-text-secondary hover:text-text-primary",
-                        ].join(" ")}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                {/* Provider toggle — only for image ads */}
+                {!isVideoAd && (
+                  <div className="flex flex-col gap-1.5">
+                    <label style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>
+                      AI provider
+                    </label>
+                    <div className="flex gap-1 p-1 bg-content-bg border border-border-subtle rounded-md">
+                      {([
+                        ["openai", "OpenAI GPT-4o"],
+                        ["claude", "Claude Opus"],
+                        ["openrouter", "OpenRouter"],
+                      ] as [AnalysisProvider, string][]).map(([p, label]) => (
+                        <button
+                          key={p}
+                          onClick={() => handleProviderChange(p)}
+                          className={[
+                            "flex-1 h-7 rounded text-[12px] font-medium transition-all duration-120 cursor-pointer",
+                            provider === p
+                              ? "bg-accent text-white"
+                              : "text-text-secondary hover:text-text-primary",
+                          ].join(" ")}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {error === "missing_key" ? (
                   <div className="flex items-start gap-2.5 px-3 py-2.5 bg-amber-500/8 border border-amber-500/20 rounded-lg">
@@ -172,7 +194,7 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
                   <p className="text-[13px] text-losing">{error}</p>
                 ) : null}
                 <PrimaryButton onClick={runAnalysis} icon={<Sparkles size={14} />}>
-                  Analyze ad
+                  {isVideoAd ? "Analyze video" : "Analyze ad"}
                 </PrimaryButton>
               </div>
             )}
@@ -186,7 +208,9 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
                   className="text-accent animate-spin"
                 />
                 <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
-                  Analyzing with {provider === "claude" ? "Claude Opus Vision" : provider === "openrouter" ? "OpenRouter Vision" : "GPT-4o Vision"}...
+                  {isVideoAd
+                    ? "Analyzing with Gemini..."
+                    : `Analyzing with ${provider === "claude" ? "Claude Opus Vision" : provider === "openrouter" ? "OpenRouter Vision" : "GPT-4o Vision"}...`}
                 </p>
               </div>
             )}
@@ -212,58 +236,103 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
                   </div>
                 </div>
 
-                {/* Hook */}
-                <AnalysisSection title="Hook">
-                  <p className="text-[13px] font-medium text-text-primary leading-[1.5]">
-                    &ldquo;{analysis.conversionElements.hook.text}&rdquo;
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    <Tag>{analysis.conversionElements.hook.type}</Tag>
-                    <Tag variant="mono">{analysis.conversionElements.hook.effectivenessScore}/10</Tag>
-                  </div>
-                  <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", marginTop: "6px", lineHeight: 1.6 }}>
-                    {analysis.conversionElements.hook.whyItWorks}
-                  </p>
-                </AnalysisSection>
-
-                {/* Visual */}
-                <AnalysisSection title="Visual hierarchy">
-                  <MetaRow label="Layout" value={analysis.conversionElements.visualHierarchy.layoutType} />
-                  <MetaRow label="Focal point" value={analysis.conversionElements.visualHierarchy.focalPoint} />
-                  <MetaRow label="Flow" value={analysis.conversionElements.visualHierarchy.visualFlow} />
-                </AnalysisSection>
-
-                {/* Colors */}
-                <AnalysisSection title="Color psychology">
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {analysis.conversionElements.colorPsychology.dominantColors.map((c) => (
-                      <div key={c} className="flex items-center gap-1.5">
-                        <div
-                          className="w-[14px] h-[14px] rounded-sm border border-border-default shrink-0" style={{ backgroundColor: c }}
-                        />
-                        <span style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
-                          {c}
-                        </span>
+                {isImageAnalysis(analysis) && (
+                  <>
+                    {/* Hook */}
+                    <AnalysisSection title="Hook">
+                      <p className="text-[13px] font-medium text-text-primary leading-[1.5]">
+                        &ldquo;{analysis.conversionElements.hook.text}&rdquo;
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        <Tag>{analysis.conversionElements.hook.type}</Tag>
+                        <Tag variant="mono">{analysis.conversionElements.hook.effectivenessScore}/10</Tag>
                       </div>
-                    ))}
-                  </div>
-                  <p className="text-[13px] text-text-secondary leading-relaxed">
-                    {analysis.conversionElements.colorPsychology.emotionalImpact}
-                  </p>
-                </AnalysisSection>
+                      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", marginTop: "6px", lineHeight: 1.6 }}>
+                        {analysis.conversionElements.hook.whyItWorks}
+                      </p>
+                    </AnalysisSection>
 
-                {/* Copy */}
-                <AnalysisSection title="Copy analysis">
-                  <MetaRow label="Headline" value={analysis.conversionElements.copyAnalysis.headline} />
-                  <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "4px" }}>
-                    {analysis.conversionElements.copyAnalysis.bodyCopySummary}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {analysis.conversionElements.copyAnalysis.powerWords.map((w) => (
-                      <Tag key={w}>{w}</Tag>
-                    ))}
-                  </div>
-                </AnalysisSection>
+                    {/* Visual */}
+                    <AnalysisSection title="Visual hierarchy">
+                      <MetaRow label="Layout" value={analysis.conversionElements.visualHierarchy.layoutType} />
+                      <MetaRow label="Focal point" value={analysis.conversionElements.visualHierarchy.focalPoint} />
+                      <MetaRow label="Flow" value={analysis.conversionElements.visualHierarchy.visualFlow} />
+                    </AnalysisSection>
+
+                    {/* Colors */}
+                    <AnalysisSection title="Color psychology">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {analysis.conversionElements.colorPsychology.dominantColors.map((c) => (
+                          <div key={c} className="flex items-center gap-1.5">
+                            <div
+                              className="w-[14px] h-[14px] rounded-sm border border-border-default shrink-0" style={{ backgroundColor: c }}
+                            />
+                            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
+                              {c}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[13px] text-text-secondary leading-relaxed">
+                        {analysis.conversionElements.colorPsychology.emotionalImpact}
+                      </p>
+                    </AnalysisSection>
+
+                    {/* Copy */}
+                    <AnalysisSection title="Copy analysis">
+                      <MetaRow label="Headline" value={analysis.conversionElements.copyAnalysis.headline} />
+                      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: "4px" }}>
+                        {analysis.conversionElements.copyAnalysis.bodyCopySummary}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {analysis.conversionElements.copyAnalysis.powerWords.map((w) => (
+                          <Tag key={w}>{w}</Tag>
+                        ))}
+                      </div>
+                    </AnalysisSection>
+                  </>
+                )}
+
+                {isVideoAnalysis(analysis) && (
+                  <>
+                    {/* Video Summary */}
+                    <AnalysisSection title="Video summary">
+                      <MetaRow label="Hook" value={analysis.videoSummary.hookSummary} />
+                      <MetaRow label="Offer" value={analysis.videoSummary.offerSummary} />
+                      <MetaRow label="CTA" value={analysis.videoSummary.ctaText} />
+                      <MetaRow label="First 3 seconds" value={analysis.videoSummary.firstThreeSeconds} />
+                    </AnalysisSection>
+
+                    {/* Audio & Pacing */}
+                    <AnalysisSection title="Audio and pacing">
+                      <MetaRow label="Audio strategy" value={analysis.audioAnalysis.audioStrategy || "hybrid"} />
+                      <MetaRow label="Voiceover" value={analysis.audioAnalysis.voiceoverStyle} />
+                      <MetaRow label="Music" value={analysis.audioAnalysis.musicMood} />
+                      <MetaRow label="Captions" value={analysis.audioAnalysis.captionStyle} />
+                      <MetaRow label="Pacing" value={analysis.audioAnalysis.pacing} />
+                    </AnalysisSection>
+
+                    {/* Scene Breakdown */}
+                    <AnalysisSection title="Scene breakdown">
+                      <div className="flex flex-col gap-2">
+                        {analysis.sceneBreakdown.slice(0, 4).map((scene) => (
+                          <div key={`${scene.index}-${scene.startSeconds}`} className="rounded-lg border border-border-subtle p-2.5">
+                            <p className="text-[13px] font-medium text-text-primary">
+                              {scene.startSeconds}s – {scene.endSeconds}s · {scene.goal}
+                            </p>
+                            <p className="text-[12px] text-text-secondary mt-1">{scene.visuals}</p>
+                            {scene.onScreenText && (
+                              <p className="text-[12px] text-text-tertiary">Text: {scene.onScreenText}</p>
+                            )}
+                            {scene.voiceover && (
+                              <p className="text-[12px] text-text-tertiary">VO: {scene.voiceover}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </AnalysisSection>
+                  </>
+                )}
 
                 {/* Replication brief */}
                 <AnalysisSection title="Replication brief" accent>
@@ -280,8 +349,48 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
                         ))}
                       </ul>
                     </div>
-                    <MetaRow label="Suggested headline" value={`"${analysis.replicationBrief.textToRender.headline}"`} />
-                    <MetaRow label="Suggested CTA" value={`"${analysis.replicationBrief.textToRender.cta}"`} />
+                    {isImageAnalysis(analysis) && (
+                      <>
+                        <MetaRow label="Suggested headline" value={`"${analysis.replicationBrief.textToRender.headline}"`} />
+                        <MetaRow label="Suggested CTA" value={`"${analysis.replicationBrief.textToRender.cta}"`} />
+                      </>
+                    )}
+                    {isVideoAnalysis(analysis) && (
+                      <>
+                        <div>
+                          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "4px" }}>
+                            Branded hooks
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {analysis.replicationBrief.brandedHookOptions.map((hook) => (
+                              <Tag key={hook}>{hook}</Tag>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "4px" }}>
+                            Branded CTAs
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {analysis.replicationBrief.brandedCtaOptions.map((cta) => (
+                              <Tag key={cta}>{cta}</Tag>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "4px" }}>
+                            Shot list
+                          </p>
+                          <div className="flex flex-col gap-1">
+                            {analysis.replicationBrief.shotList.slice(0, 3).map((shot) => (
+                              <p key={shot.sequence} className="text-[12px] text-text-secondary">
+                                {shot.sequence}. {shot.visuals} ({shot.durationSeconds}s)
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </AnalysisSection>
               </div>
@@ -299,7 +408,7 @@ export function AnalysisModal({ ad, onClose, onDuplicate }: AnalysisModalProps) 
               onClick={() => onDuplicate(ad, analysis)}
               icon={<Copy size={14} />}
             >
-              Duplicate this ad
+              {isVideoAd ? "Duplicate this video" : "Duplicate this ad"}
             </PrimaryButton>
           </div>
         )}

@@ -6,7 +6,8 @@ import { Card } from "@/shared/components/ui/card";
 import { getWinnerTier, getWinnerTierLabel } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 import { useAppStore } from "@/shared/lib/store";
-import { Play, ImageIcon, Layers, Trophy, TrendingUp, Zap, Bookmark, ChevronDown, UserPlus, Clock, X, Sparkles, Copy, Check } from "lucide-react";
+import { getAdMediaType } from "@/shared/lib/media";
+import { Play, ImageIcon, Layers, Trophy, TrendingUp, Zap, Bookmark, ChevronDown, UserPlus, Clock, X, Sparkles, Copy, Check, Film } from "lucide-react";
 import { createPortal } from "react-dom";
 
 interface AdCardProps {
@@ -31,6 +32,7 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
     : (ad.running_duration?.days ?? 0);
   const imageUrl = ad.image || ad.thumbnail;
   const hasVideo = !!ad.video;
+  const mediaType = getAdMediaType(ad);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState<number | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -161,6 +163,15 @@ export function AdCard({ ad, analysisScore, onAnalyze, onDuplicate, variant }: A
             </div>
           </div>
         </div>
+
+        {mediaType === "video" && (
+          <div className="absolute bottom-2 right-2">
+            <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-[4px] bg-black/60 text-white backdrop-blur-sm">
+              <Film size={10} />
+              Video
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── 2. Ad Copy ──────────────────────────────────────────────────────── */}

@@ -1,4 +1,4 @@
-import type { AdAnalysis, BrandProfile } from "@/shared/types";
+import type { AdAnalysis, BrandProfile, ImageAdAnalysis } from "@/shared/types";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 
 export type AnalysisProvider = "openai" | "claude" | "openrouter";
@@ -84,7 +84,7 @@ async function analyzeAdWithOpenAI(
   ad: ForeplayAd,
   brandProfile: BrandProfile,
   openaiApiKey: string
-): Promise<AdAnalysis> {
+): Promise<ImageAdAnalysis> {
   const imageUrl = ad.image || ad.thumbnail;
   if (!imageUrl) {
     throw new Error("Ad has no image to analyze");
@@ -132,14 +132,18 @@ async function analyzeAdWithOpenAI(
 
   // Strip markdown code fences if present
   const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  return JSON.parse(cleaned) as AdAnalysis;
+  const parsed = JSON.parse(cleaned) as Omit<ImageAdAnalysis, "mediaType">;
+  return {
+    mediaType: "image",
+    ...parsed,
+  };
 }
 
 async function analyzeAdWithClaude(
   ad: ForeplayAd,
   brandProfile: BrandProfile,
   claudeApiKey: string
-): Promise<AdAnalysis> {
+): Promise<ImageAdAnalysis> {
   const imageUrl = ad.image || ad.thumbnail;
   if (!imageUrl) {
     throw new Error("Ad has no image to analyze");
@@ -184,14 +188,15 @@ async function analyzeAdWithClaude(
   if (!content) throw new Error("No response from Claude");
 
   const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  return JSON.parse(cleaned) as AdAnalysis;
+  const parsed = JSON.parse(cleaned) as Omit<ImageAdAnalysis, "mediaType">;
+  return { mediaType: "image" as const, ...parsed };
 }
 
 async function analyzeAdWithOpenRouter(
   ad: ForeplayAd,
   brandProfile: BrandProfile,
   openrouterApiKey: string
-): Promise<AdAnalysis> {
+): Promise<ImageAdAnalysis> {
   const imageUrl = ad.image || ad.thumbnail;
   if (!imageUrl) {
     throw new Error("Ad has no image to analyze");
@@ -245,7 +250,8 @@ async function analyzeAdWithOpenRouter(
 
   const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   try {
-    return JSON.parse(cleaned) as AdAnalysis;
+    const parsed = JSON.parse(cleaned) as Omit<ImageAdAnalysis, "mediaType">;
+    return { mediaType: "image" as const, ...parsed };
   } catch {
     throw new Error(`OpenRouter model did not return valid JSON: ${cleaned.slice(0, 200)}`);
   }

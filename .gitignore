@@ -37,3 +37,4 @@ next-env.d.ts
 
 # dev scratch scripts
 test-crawler*.ts
+.everything-claude-code/

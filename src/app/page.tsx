@@ -10,6 +10,7 @@ import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/ui/empty-state";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { useAppStore } from "@/shared/lib/store";
+import { getAdMediaType, getDisplayFormatValues } from "@/shared/lib/media";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 import type { AdAnalysis } from "@/shared/types";
 import { useRouter } from "next/navigation";
@@ -38,6 +39,7 @@ export default function HomePage() {
     minDays: "",
     platform: "",
     niche: "",
+    mediaType: "image",
   });
   const [filters, setFilters] = useState<FilterValues>({
     search: "",
@@ -45,6 +47,7 @@ export default function HomePage() {
     minDays: "",
     platform: "",
     niche: "",
+    mediaType: "image",
   });
   const [selectedCompetitor, setSelectedCompetitor] = useState("");
   const [analyzingAd, setAnalyzingAd] = useState<ForeplayAd | null>(null);
@@ -78,7 +81,7 @@ export default function HomePage() {
       if (filters.platform) params.append("publisher_platform", filters.platform);
       if (filters.niche)    params.append("niches", filters.niche);
       params.set("order", filters.order);
-      params.set("display_format", "image");
+      getDisplayFormatValues(filters.mediaType).forEach((value) => params.append("display_format", value));
       params.set("limit", "24");
       if (pageParam) params.set("cursor", String(pageParam));
 
@@ -222,7 +225,7 @@ export default function HomePage() {
       sessionStorage.setItem("generate_context", JSON.stringify({
         ad,
         analysis: existingAnalysis || null,
-        skipAnalysis: !existingAnalysis,
+        skipAnalysis: getAdMediaType(ad) === "image" && !existingAnalysis,
       }));
       router.push("/generate");
     },
@@ -350,7 +353,7 @@ export default function HomePage() {
                   description="Try adjusting your filters or clearing them."
                   action={
                     <Button variant="outline" onClick={() =>
-                      setSavedFilters({ search: "", order: "longest_running", minDays: "", platform: "", niche: "" })
+                      setSavedFilters({ search: "", order: "longest_running", minDays: "", platform: "", niche: "", mediaType: "image" })
                     }>
                       Clear filters
                     </Button>
@@ -413,7 +416,7 @@ export default function HomePage() {
               description="Try adjusting your filters or clearing them to see all available ads."
               action={
                 <Button variant="outline" onClick={() =>
-                  setFilters({ search: "", order: "longest_running", minDays: "", platform: "", niche: "" })
+                  setFilters({ search: "", order: "longest_running", minDays: "", platform: "", niche: "", mediaType: "image" })
                 }>
                   Clear filters
                 </Button>

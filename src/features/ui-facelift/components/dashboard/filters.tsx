@@ -11,6 +11,7 @@ export interface FilterValues {
   minDays: string;
   platform: string;
   niche: string;
+  mediaType: "image" | "video" | "all";
 }
 
 interface FiltersProps {
@@ -205,6 +206,30 @@ export function Filters({
                   className={cn(
                     "flex-1 h-9 rounded-[10px] border text-[13px] font-medium transition-all duration-100",
                     filters.platform === opt.value
+                      ? "bg-accent-muted border-accent text-accent"
+                      : "bg-content-bg border-border-subtle text-text-secondary hover:border-border-default hover:text-text-primary"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Media type */}
+          <FilterSection label="Media type">
+            <div className="flex gap-2">
+              {[
+                { value: "image", label: "Image" },
+                { value: "video", label: "Video" },
+                { value: "all", label: "All" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => update("mediaType", opt.value)}
+                  className={cn(
+                    "flex-1 h-9 rounded-[10px] border text-[13px] font-medium transition-all duration-100",
+                    filters.mediaType === opt.value
                       ? "bg-accent-muted border-accent text-accent"
                       : "bg-content-bg border-border-subtle text-text-secondary hover:border-border-default hover:text-text-primary"
                   )}

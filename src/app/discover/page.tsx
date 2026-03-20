@@ -12,6 +12,7 @@ import { LoadingState } from "@/shared/components/ui/loading-state";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { useAppStore } from "@/shared/lib/store";
 import { useRecentSearches, type SavedSearch } from "@/features/discover/hooks/use-recent-searches";
+import { getAdMediaType, getDisplayFormatValues } from "@/shared/lib/media";
 import type { ForeplayAd } from "@/shared/types/foreplay";
 import type { AdAnalysis } from "@/shared/types";
 import { MasonryGrid } from "@/shared/components/masonry-grid";
@@ -106,6 +107,9 @@ export default function DiscoverPage() {
   const setOrder   = (v: string) => setDiscoverSearch({ order: v });
   const setCommitted = (v: typeof committed) => setDiscoverSearch({ committed: v });
 
+  // Media type filter
+  const [mediaType, setMediaType] = useState<"image" | "video" | "all">("image");
+
   // Dropdown visibility
   const [showRecent, setShowRecent] = useState(false);
   const searchWrapRef = useRef<HTMLDivElement>(null);
@@ -150,13 +154,14 @@ export default function DiscoverPage() {
   // ── Infinite query ────────────────────────────────────────────────────────
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } =
     useInfiniteQuery({
-      queryKey: ["discover-ads", committed],
+      queryKey: ["discover-ads", committed, mediaType],
       queryFn: async ({ pageParam }) => {
         if (!committed) return { data: [], metadata: { cursor: null } };
         const params = new URLSearchParams();
         if (committed.query)   params.set("query", committed.query);
         if (committed.niche)   params.append("niches", committed.niche);
         params.set("order", committed.order);
+        getDisplayFormatValues(mediaType).forEach((value) => params.append("display_format", value));
         // When sorting by longest running, require at least 1 day so the API
         // doesn't return freshly-indexed 0-day ads that break the sort order.
         if (committed.order === "longest_running") {
@@ -279,7 +284,7 @@ export default function DiscoverPage() {
       sessionStorage.setItem("generate_context", JSON.stringify({
         ad,
         analysis: existingAnalysis || null,
-        skipAnalysis: !existingAnalysis,
+        skipAnalysis: getAdMediaType(ad) === "image" && !existingAnalysis,
       }));
       router.push("/generate");
     },
@@ -335,6 +340,12 @@ export default function DiscoverPage() {
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="most_relevant">Most Relevant</option>
+        </Select>
+
+        <Select value={mediaType} onChange={(e) => setMediaType(e.target.value as "image" | "video" | "all")} className="w-28">
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+          <option value="all">All</option>
         </Select>
 
         <Button onClick={handleSearchClick}>

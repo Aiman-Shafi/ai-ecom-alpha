@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import type { AdAnalysis } from "@/shared/types";
+import type { AdAnalysis, ImageAdAnalysis } from "@/shared/types";
+import { isImageAnalysis } from "@/shared/lib/media";
 
 // ─── Demo data (used when useDemoData=true or no real analyses exist) ─────────
 const MOCK_ADS = [
@@ -17,7 +18,7 @@ interface TopAdsListProps {
   /** When true, always render mock data regardless of real data */
   useDemoData?: boolean;
   /** Called when a real ad row is clicked */
-  onAdClick?: (adId: string, analysis: AdAnalysis, name: string) => void;
+  onAdClick?: (adId: string, analysis: ImageAdAnalysis, name: string) => void;
 }
 
 function scoreClasses(score: number) {
@@ -81,6 +82,7 @@ export function TopAdsList({ analyses = {}, useDemoData = false, onAdClick }: To
 
   // ── Real data — top 5 from analyses store, sorted by overallScore ─────────
   const topAds = Object.entries(analyses)
+    .filter((entry): entry is [string, ImageAdAnalysis] => isImageAnalysis(entry[1]))
     .sort(([, a], [, b]) => b.overallScore - a.overallScore)
     .slice(0, 5)
     .map(([adId, analysis]) => {
@@ -107,7 +109,7 @@ export function TopAdsList({ analyses = {}, useDemoData = false, onAdClick }: To
         return (
           <div
             key={adId}
-            onClick={() => analysis && onAdClick?.(adId, analysis, name)}
+            onClick={() => analysis && isImageAnalysis(analysis) && onAdClick?.(adId, analysis, name)}
             className="flex items-center gap-3 p-2.5 bg-content-bg rounded-md cursor-pointer transition-colors duration-100 hover:bg-[#EFEEEB]"
           >
             {/* Score-tinted icon — thumbnail not stored in AdAnalysis */}

@@ -11,7 +11,7 @@ import { Panel } from "@/features/ui-facelift/components/dashboard/panel";
 import { PerformanceChart, type PerformanceChartDataPoint } from "@/features/ui-facelift/components/dashboard/performance-chart";
 import { TopAdsList } from "@/features/ui-facelift/components/dashboard/top-ads-list";
 import { AnalysisDetailModal } from "@/features/ui-facelift/components/dashboard/analysis-detail-modal";
-import type { AdAnalysis } from "@/shared/types";
+import type { ImageAdAnalysis } from "@/shared/types";
 import { useAppStore } from "@/shared/lib/store";
 import { DollarSign, Activity, Star, BarChart3, LineChart, Download } from "lucide-react";
 
@@ -22,7 +22,7 @@ const DEMO_ADS_GENERATED     = 312;
 const DEMO_COST_USD          = 482.60;
 
 export default function AnalyticsDashboard() {
-  const [selectedAnalysis, setSelectedAnalysis] = useState<{ adId: string; analysis: AdAnalysis; name: string } | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<{ adId: string; analysis: ImageAdAnalysis; name: string } | null>(null);
   const useDemoData = false;
 
   // ── Real store data ──────────────────────────────────────────────────────────
@@ -53,9 +53,6 @@ export default function AnalyticsDashboard() {
       buckets[key].generated++;
       if (ad.status === "approved") buckets[key].approved++;
     }
-    // The usage counter (adsGenerated) may be higher than generatedAds.length
-    // because not all generated ads are persisted to the array. Distribute the
-    // untracked count to the most recent month bucket.
     const trackedTotal = generatedAds.length;
     const untracked = Math.max(0, adsGenerated - trackedTotal);
     if (untracked > 0) {
@@ -63,7 +60,6 @@ export default function AnalyticsDashboard() {
       if (keys.length > 0) {
         buckets[keys[keys.length - 1]].generated += untracked;
       } else {
-        // No persisted ads at all — create a bucket for the current month
         const now = new Date();
         const key = `${now.getFullYear()}-${now.getMonth()}`;
         buckets[key] = { generated: adsGenerated, approved: 0 };
