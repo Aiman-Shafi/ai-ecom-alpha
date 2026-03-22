@@ -181,6 +181,34 @@
   background: var(--off);
   position: relative;
 }
+
+/* YouTube video player */
+.lp-root .hero-video-player {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(124,58,237,0.08),
+    0 4px 16px rgba(0,0,0,0.06),
+    0 16px 48px rgba(0,0,0,0.10),
+    0 40px 100px rgba(0,0,0,0.13),
+    0 64px 120px rgba(124,58,237,0.12);
+}
+.lp-root .hero-video-frame {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+}
+.lp-root .hero-video-frame iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: none;
+  display: block;
+}
 .lp-root .screen-bar {
   display: flex; align-items: center; gap: 7px;
   padding: 13px 18px; background: #fff; border-bottom: 1px solid var(--border);
