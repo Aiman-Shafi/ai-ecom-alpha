@@ -50,6 +50,11 @@ export const metadata: Metadata = {
   title: "Genie OS — The Complete Winning Ad Workflow",
   description:
     "Save, analyze and replicate winning ads. The complete workflow for performance teams obsessed with creative intelligence.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
